@@ -1,182 +1,104 @@
 
-import React, {useReducer,useRef,useEffect,useCallback,useMemo} from "react";
 
+import React, { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import './Todolist.css'
 
+export const Todolist = () => {
 
+  const initialValue = []
 
+  const reducerFunction = (state, action) => {
+    switch (action.type) {
+      case "add":
+        return [
+          ...state,
+          {
+            id: Date.now(),
+            title: action.payload,
+            completed: false
+          }
+        ]
 
+      case "done":
+        return state.map(todo =>
+          todo.id === action.payload
+            ? { ...todo, completed: !todo.completed }
+            : todo
+        )
 
+      case "del":
+        return state.filter(todo => todo.id !== action.payload)
 
-
-export function Todolist() {
-  const initialState = [];
-  const todoReducer=(state,action)=>{
-     switch (action.type) {
-    case "ADD":
-      return [
-        ...state,
-        {
-          id: Date.now(),
-          title: action.payload,
-          completed: false,
-        },
-      ];
-
-    case "TOGGLE":
-      return state.map((todo) =>
-        todo.id === action.payload
-          ? { ...todo, completed: !todo.completed }
-          : todo
-      );
-
-    case "REMOVE":
-      return state.filter((todo) => todo.id !== action.payload);
-
-    default:
-      return state;
+      default:
+        return state
+    }
   }
 
-  }
-  const [todos, dispatch] = useReducer(todoReducer, initialState);
-  const inputRef = useRef(null);
+  const [state, dispatch] = useReducer(reducerFunction, initialValue)
+
+  // useRef
+  const myref = useRef()
 
   useEffect(() => {
-    inputRef.current.focus();
-  }, []);
+    myref.current.focus()
+  }, [])
 
-  const addTodo = useCallback(() => {
-    const text = inputRef.current.value.trim();
-    if (!text) return;
+  // useCallback
+  const handleAdd = useCallback(() => {
+    dispatch({ type: "add", payload: myref.current.value })
+    myref.current.value = ""
+  }, [])
 
-    dispatch({ type: "ADD", payload: text });
-    inputRef.current.value = "";
-    inputRef.current.focus();
-  }, []);
+  const handleDone = useCallback((id) => {
+    dispatch({ type: "done", payload: id })
+  }, [])
 
-  const toggleTodo = useCallback((id) => {
-    dispatch({ type: "TOGGLE", payload: id });
-  }, []);
+  const handleDelete = useCallback((id) => {
+    dispatch({ type: "del", payload: id })
+  }, [])
 
-  const removeTodo = useCallback((id) => {
-    dispatch({ type: "REMOVE", payload: id });
-  }, []);
+  // useMemo
+  const completedTask = useMemo(() => {
+    return state.filter((todo)=>todo.completed)
+  }, [state])
 
-  const completedTodos = useMemo(
-    () => todos.filter((todo) => todo.completed),
-    [todos]
-  );
+  const pendingTask = useMemo(() => {
+    return state.filter((todo)=> !todo.completed)
+  }, [state])
+return (
+  <div className="todo-container">
+    <h1 className="title">Todo List</h1>
 
-  const pendingTodos = useMemo(
-    () => todos.filter((todo) => !todo.completed),
-    [todos]
-  );
+    <div className="input-box">
+      <input ref={myref} placeholder="Enter task" />
+      <button onClick={handleAdd}>Add</button>
+    </div>
 
-  return (
-    <div
-      style={{
-        padding: "20px",
-        maxWidth: "600px",
-        margin: "0 auto",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <h2 style={{ textAlign: "center" }}>
-      Taks 5
-      </h2>
-
-      <div style={{ display: "flex", marginBottom: "15px" }}>
-        <input
-          ref={inputRef}
-          placeholder="Enter todo..."
-         
-        />
-        <button
-          onClick={addTodo}
-          style={{
-            padding: "8px 15px",
-            marginLeft: "8px",
-            background: "#1976d2",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-          }}
-        >
-          Add
-        </button>
-      </div>
-
-      <h3>All Todos</h3>
-
-      {todos.map((todo) => (
-        <div
-          key={todo.id}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "10px",
-          }}
-        >
-          <span
-            style={{
-              textDecoration: todo.completed ? "line-through" : "none",
-              color: todo.completed ? "gray" : "black",
-              fontStyle: todo.completed ? "italic" : "normal",
-              opacity: todo.completed ? 0.6 : 1,
-              flex: 1,
-              fontSize: "16px",
-              transition: "all 0.3s",
-            }}
-          >
-            {todo.title}
-          </span>
-
-          <button
-            onClick={() => toggleTodo(todo.id)}
-            style={{
-              padding: "5px 10px",
-              marginRight: "5px",
-              background: todo.completed ? "#4caf50" : "#1976d2",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-            }}
-          >
-            {todo.completed ? "Pending" : "Done"}
-          </button>
-
-          <button
-            onClick={() => removeTodo(todo.id)}
-            style={{
-              padding: "5px 10px",
-              background: "red",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-            }}
-          >
+    <h2>All Tasks</h2>
+    {state.map(item => (
+      <div className="task" key={item.id}>
+        <span className={item.completed ? "done" : ""}>
+          {item.title}
+        </span>
+        <div>
+          <button onClick={() => handleDone(item.id)}>Done</button>
+          <button className="delete" onClick={() => handleDelete(item.id)}>
             Delete
           </button>
         </div>
-      ))}
+      </div>
+    ))}
 
-      <hr />
+    <h2>Completed Tasks</h2>
+    {completedTask.map(c => (
+      <p key={c.id} className="completed-task">{c.title}</p>
+    ))}
 
-      <h3>Completed Todos</h3>
-      {completedTodos.length === 0 && <p>No completed todos.</p>}
-      {completedTodos.map((todo) => (
-        <p key={todo.id} style={{ color: "gray", fontStyle: "italic" }}>
-          {todo.title}
-        </p>
-      ))}
+    <h2>Pending Tasks</h2>
+    {pendingTask.map(p => (
+      <p key={p.id} className="pending-task">{p.title}</p>
+    ))}
+  </div>
+)
 
-      <h3>Pending Todos</h3>
-      {pendingTodos.length === 0 && <p>No pending todos.</p>}
-      {pendingTodos.map((todo) => (
-        <p key={todo.id}>{todo.title}</p>
-      ))}
-    </div>
-  );
 }
